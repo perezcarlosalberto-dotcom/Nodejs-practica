@@ -1,28 +1,39 @@
-// importante al trabajar con nuestros archivos debemos añadir al final .js requerido para ESM
 import NoteEntity from "../../domain/entities/note.entity.js";
 
 export default class NoteService {
-    constructor(noteRepository) {
-        this.noteRepository = noteRepository;
-    }
+  constructor(noteRepository) {
+    this.noteRepository = noteRepository;
+  }
 
-    async createNote(data) {
-        if (!data.title || !data.content) { throw new Error("Title and content are required"); }
+  async createNote(note) {
+    if (!note.title || !note.content) { throw new Error('Title and content are required') };
 
-        const note = new NoteEntity(data);
-        return await this.noteRepository.save(note);
-    }
+    const newNote = new NoteEntity(note.id, note.title, note.content, note.image, note.isPrivate, note.password, note.userId, note.categoryId);
 
-    async getNotesByUserId(userId){
-        return await this.noteRepository.findByUserId(userId);
-    }
+    return await this.noteRepository.save(newNote);
+  }
 
-    async updateNote(id, data) {
-        return await this.noteRepository.update(id, data);
-    }
+  async getNoteByUserId(userId) {
+    return await this.noteRepository.findByUserId(userId);
+  }
 
-    async deleteNote(id) {
-        return await this.noteRepository.delete(id);
-    }    
-    
+  async getNoteById(id) {
+    return await this.noteRepository.findById(id);
+  }
+
+  async updateNote(id, note) {
+    return await this.noteRepository.update(id, note);
+  }
+  
+  async deleteNote(id) {
+    return await this.noteRepository.delete(id);
+  }
+
+  async getPublicNoteById(id) {
+    const note = await this.noteRepository.findById(id);
+    if (!note) { return null; }
+    if (note.isPrivate) { throw new Error('This note is private') };
+    return note;
+  }
+
 }

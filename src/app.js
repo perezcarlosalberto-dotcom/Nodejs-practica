@@ -1,42 +1,48 @@
-import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';    
+import 'dotenv/config';
+import cors from 'cors';
 import 'express-async-errors';
 import morgan from 'morgan';
 import { loggerMiddleware } from './presentation/middlewares/logger.middleware.js';
 import noteRoutes from './presentation/routes/note.routes.js';
-import { connectMongo } from './infrastructure/database/mongo/connection.js';
-import { connectMysql } from './infrastructure/database/mysql/connection.js';
- 
-await connectMongo();
-//await connectMysql();
- 
+import connectDB from './infra/database/mongo/connection.js';
+// import { connectMySQL } from './infra/database/mysql/connection.js';
+import authRoutes from './presentation/routes/auth.routes.js';
+import { setupSwagger } from './infra/config/swagger.config.js';
+import categoryRoutes from './presentation/routes/category.routes.js';
+
+
+await connectDB();
+// await connectMySQL();
+
+// create express app
 const app = express();
- 
+
+// middleware
 app.use(cors());
 app.use(express.json());
-app.use(loggerMiddleware);
 app.use(morgan('dev'));
- 
-//imagenes estaticas
+app.use(loggerMiddleware);
 app.use('/uploads', express.static('uploads'));
-app.use('/api/v1/notes',noteRoutes);
- 
-app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'OK',message: 'API de notas activa' });
+app.use(express.urlencoded({ extended: true }));
+
+// routes
+app.use('/api/v1/notes', noteRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/categories', categoryRoutes);
+
+
+
+setupSwagger(app);
+
+app.get('/api/v1/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'API activa' });
 });
- 
- 
- 
- 
-//midleware de manejo de errores global
- 
+
+// middleware for errors
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({ status: 'ERROR', message: 'Internal Server Error' });
 });
- 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor escuchando en el puerto ${PORT}`);
-});
+
+export default app;
